@@ -1,0 +1,246 @@
+/* YouTube Neat Chat — 미니 채팅 입력 오버레이 */
+
+#ync-overlay {
+  position: absolute !important;
+  z-index: 9999 !important;
+  width: 320px !important;
+  border-radius: 10px !important;
+  overflow: visible !important;
+  background: rgba(15, 15, 15, 0.85) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+  font-family: "Roboto", "Noto Sans KR", "Noto Sans JP", sans-serif !important;
+  color: #e8e8e8 !important;
+  pointer-events: auto !important;
+  transform: none !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* --- 헤더 (드래그 핸들) --- */
+#ync-overlay .ync-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 4px 8px !important;
+  cursor: grab !important;
+  user-select: none !important;
+  background: transparent !important;
+  border: none !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+}
+
+#ync-overlay .ync-header:active {
+  cursor: grabbing !important;
+}
+
+#ync-overlay .ync-title {
+  font-size: 14px !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#ync-overlay .ync-close {
+  background: none !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+  font-size: 10px !important;
+  cursor: pointer !important;
+  padding: 2px 4px !important;
+  border-radius: 3px !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  transition: color 0.15s !important;
+}
+
+#ync-overlay .ync-close:hover {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* --- 입력 영역 --- */
+#ync-overlay .ync-input-wrap {
+  display: flex !important;
+  align-items: center !important;
+  padding: 4px 8px 8px !important;
+  gap: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  margin: 0 !important;
+}
+
+#ync-overlay .ync-input {
+  flex: 1 !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+  color: #e8e8e8 !important;
+  font-size: 13px !important;
+  font-family: inherit !important;
+  outline: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#ync-overlay .ync-input::placeholder {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+#ync-overlay .ync-input:focus {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+#ync-overlay .ync-emoji-btn {
+  background: none !important;
+  border: none !important;
+  font-size: 18px !important;
+  cursor: pointer !important;
+  padding: 2px 4px !important;
+  border-radius: 4px !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  transition: background 0.15s !important;
+  flex-shrink: 0 !important;
+}
+
+#ync-overlay .ync-emoji-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+#ync-overlay .ync-send-btn {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: none !important;
+  border-radius: 6px !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: background 0.15s !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  line-height: 1.2 !important;
+  font-family: inherit !important;
+}
+
+#ync-overlay .ync-send-btn:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+}
+
+/* --- 이모지 피커 --- */
+#ync-overlay .ync-emoji-picker {
+  display: none;
+  position: absolute !important;
+  bottom: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+  margin-bottom: 4px !important;
+  background: rgba(20, 20, 20, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 10px !important;
+  padding: 0 !important;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4) !important;
+  box-sizing: border-box !important;
+  flex-direction: column !important;
+  width: 320px !important;
+}
+
+#ync-overlay .ync-emoji-picker.ync-picker-open {
+  display: flex !important;
+}
+
+/* 검색창 */
+#ync-overlay .ync-emoji-search-wrap {
+  padding: 8px 8px 4px !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+#ync-overlay .ync-emoji-search {
+  width: 100% !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 6px !important;
+  padding: 5px 8px !important;
+  color: #e8e8e8 !important;
+  font-size: 12px !important;
+  font-family: inherit !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+}
+
+#ync-overlay .ync-emoji-search::placeholder {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+#ync-overlay .ync-emoji-search:focus {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* 이모지 그리드 */
+#ync-overlay .ync-emoji-grid {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 2px !important;
+  padding: 4px 8px 8px !important;
+  max-height: 200px !important;
+  overflow-y: auto !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+#ync-overlay .ync-emoji-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  font-size: 16px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: background 0.1s !important;
+  user-select: none !important;
+  border: none !important;
+  background: none !important;
+  margin: 0 !important;
+  padding: 0 4px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  color: #e8e8e8 !important;
+}
+
+#ync-overlay .ync-emoji-item:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* 이모지 그리드 스크롤바 */
+#ync-overlay .ync-emoji-grid::-webkit-scrollbar {
+  width: 4px;
+}
+#ync-overlay .ync-emoji-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+#ync-overlay .ync-emoji-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
