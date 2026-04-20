@@ -12,10 +12,10 @@
   // [emoji, keywords] — 검색용 키워드 (영어, 한국어, 일본어)
   const EMOJIS = [
     // 얼굴 — 웃음
-    ["😊", "smile 미소 笑顔"],
-    ["😄", "grin 활짝 にっこり"],
+    ["😊", "smile happy 미소 笑顔"],
+    ["😄", "grin happy 활짝 にっこり"],
     ["😁", "beam teeth 이빨"],
-    ["😂", "joy lol 웃음 笑"],
+    ["😂", "joy lol funny lmao 웃음 笑"],
     ["🤣", "rofl 빵 ㅋㅋ 草 ww"],
     ["😆", "laugh squint 크크"],
     ["😅", "sweat 땀 汗"],
@@ -66,8 +66,8 @@
     ["🤮", "vomit 으웩"],
     // 얼굴 — 감정
     ["🥺", "pleading puppy 살려 お願い"],
-    ["😢", "cry tear 울 泣く"],
-    ["😭", "sob bawl 대성통곡 号泣"],
+    ["😢", "cry tear sad 울 泣く"],
+    ["😭", "sob bawl sad 대성통곡 号泣"],
     ["😤", "huff angry 화 怒"],
     ["😠", "angry 화나 おこ"],
     ["😡", "rage furious 분노 激怒"],
@@ -82,7 +82,7 @@
     ["🤯", "exploding mind blown 머리폭발"],
     ["😳", "flushed blush 부끄 恥"],
     // 얼굴 — 기타
-    ["🥳", "party celebrate 파티 パーティ"],
+    ["🥳", "party celebrate birthday 파티 パーティ"],
     ["🤠", "cowboy"],
     ["😎", "cool sunglasses 쿨 かっこいい"],
     ["🤓", "nerd glasses 너드"],
@@ -94,8 +94,8 @@
     ["🗿", "moai stone moyai"],
     ["🫨", "shake vibrate 흔들"],
     // 손
-    ["👍", "thumbs up good 좋아 いいね"],
-    ["👎", "thumbs down bad 싫어"],
+    ["👍", "thumbs up good yes ok 좋아 いいね"],
+    ["👎", "thumbs down bad no 싫어"],
     ["👏", "clap bravo 박수 拍手"],
     ["🙏", "pray please thanks 감사 ありがとう"],
     ["💪", "muscle strong 힘 力"],
@@ -119,7 +119,7 @@
     ["👈", "left 왼쪽"],
     ["👉", "right 오른쪽"],
     // 하트/심볼
-    ["❤️", "red heart 빨강하트 赤ハート"],
+    ["❤️", "red heart love 빨강하트 赤ハート"],
     ["🧡", "orange heart 주황하트"],
     ["💛", "yellow heart 노랑하트"],
     ["💚", "green heart 초록하트"],
@@ -144,6 +144,7 @@
     ["🐸", "frog 개구리 かえる"],
     ["🐧", "penguin 펭귄 ペンギン"],
     ["🦊", "fox 여우 きつね"],
+    ["🐹", "hamster 햄스터 ハムスター"],
     ["🐥", "chick baby 병아리 ひよこ"],
     ["🦋", "butterfly 나비"],
     ["🌸", "cherry blossom sakura 벚꽃 桜 さくら"],
@@ -164,7 +165,7 @@
     ["🧋", "boba bubble tea 버블티 タピオカ"],
     // 활동/물건
     ["⭐", "star 별 星 ほし"],
-    ["🔥", "fire hot 불 炎 あつい"],
+    ["🔥", "fire hot lit 불 炎 あつい"],
     ["✨", "sparkle shine 반짝 キラキラ"],
     ["💯", "hundred perfect 백점 満点"],
     ["🎉", "party tada congratulations 축하 おめでとう"],
@@ -372,11 +373,12 @@
       items.push({ el: span, keywords: (emoji + " " + keywords).toLowerCase() });
     }
 
-    // 검색 필터
+    // 검색 필터 — 단어별 AND 매칭
     searchInput.addEventListener("input", () => {
       const q = searchInput.value.toLowerCase().trim();
+      const words = q.split(/\s+/).filter(Boolean);
       for (const item of items) {
-        item.el.style.display = (!q || item.keywords.includes(q)) ? "" : "none";
+        item.el.style.display = (words.length === 0 || words.every(w => item.keywords.includes(w))) ? "" : "none";
       }
     });
 
