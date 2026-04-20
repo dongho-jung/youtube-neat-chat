@@ -8,6 +8,9 @@
   let layoutActive = false;
   let layoutTimer = null;
   let yncChatFrame = null;
+  let emojiSearchItems = [];
+  let ytEmojiMap = {};
+  let pendingYTEmojis = null;
 
   // [emoji, keywords] — 검색용 키워드 (영어, 한국어, 일본어)
   const EMOJIS = [
@@ -332,6 +335,11 @@
     setupDrag();
     setupChatInput();
 
+    if (pendingYTEmojis) {
+      populateYTEmojis(pendingYTEmojis);
+      pendingYTEmojis = null;
+    }
+
     overlay.querySelector("#ync-close").addEventListener("click", () => {
       overlay.remove();
       overlay = null;
@@ -359,7 +367,7 @@
     picker.appendChild(grid);
 
     // 이모지 아이템 생성
-    const items = [];
+    emojiSearchItems = [];
     for (const [emoji, keywords] of EMOJIS) {
       const span = document.createElement("span");
       span.className = "ync-emoji-item";
@@ -370,15 +378,33 @@
         chatInput.focus();
       });
       grid.appendChild(span);
-      items.push({ el: span, keywords: (emoji + " " + keywords).toLowerCase() });
+      emojiSearchItems.push({ el: span, keywords: (emoji + " " + keywords).toLowerCase() });
     }
+
+    // YouTube emoji section (populated dynamically from chat iframe)
+    const ytSection = document.createElement("div");
+    ytSection.className = "ync-yt-section";
+    ytSection.style.display = "none";
+    const ytLabel = document.createElement("div");
+    ytLabel.className = "ync-yt-label";
+    ytLabel.textContent = "YouTube";
+    ytSection.appendChild(ytLabel);
+    const ytGrid = document.createElement("div");
+    ytGrid.className = "ync-emoji-grid ync-yt-grid";
+    ytSection.appendChild(ytGrid);
+    picker.appendChild(ytSection);
 
     // 검색 필터 — 단어별 AND 매칭
     searchInput.addEventListener("input", () => {
       const q = searchInput.value.toLowerCase().trim();
       const words = q.split(/\s+/).filter(Boolean);
-      for (const item of items) {
+      for (const item of emojiSearchItems) {
         item.el.style.display = (words.length === 0 || words.every(w => item.keywords.includes(w))) ? "" : "none";
+      }
+      // YouTube 섹션: 보이는 아이템이 하나도 없으면 라벨 숨김
+      if (ytSection.style.display !== "none") {
+        const anyYTVisible = ytGrid.querySelector(".ync-yt-emoji-item:not([style*='display: none'])");
+        ytLabel.style.display = (words.length === 0 || anyYTVisible) ? "" : "none";
       }
     });
 
@@ -405,6 +431,42 @@
         picker.classList.remove("ync-picker-open");
       }
     });
+  }
+
+  // --- YouTube 이모지 채우기 ---
+  function populateYTEmojis(emojis) {
+    if (!overlay) return;
+    const ytSection = overlay.querySelector(".ync-yt-section");
+    const ytGrid = overlay.querySelector(".ync-yt-grid");
+    if (!ytSection || !ytGrid) return;
+
+    ytGrid.innerHTML = "";
+    ytEmojiMap = {};
+
+    const chatInput = overlay.querySelector("#ync-input");
+    for (const { shortcode, src } of emojis) {
+      const span = document.createElement("span");
+      span.className = "ync-emoji-item ync-yt-emoji-item";
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = shortcode;
+      img.title = shortcode.replace(/:/g, "");
+      img.className = "ync-yt-emoji-img";
+      span.appendChild(img);
+      span.addEventListener("click", () => {
+        chatInput.value += shortcode;
+        chatInput.focus();
+      });
+      ytGrid.appendChild(span);
+
+      emojiSearchItems.push({
+        el: span,
+        keywords: shortcode.replace(/:/g, " ").trim().toLowerCase(),
+      });
+      ytEmojiMap[shortcode] = src;
+    }
+
+    ytSection.style.display = "";
   }
 
   // --- 드래그 ---
@@ -444,7 +506,7 @@
 
       const win = getChatFrameWindow();
       if (win) {
-        win.postMessage({ source: "ync-send-chat", text }, "https://www.youtube.com");
+        win.postMessage({ source: "ync-send-chat", text, ytEmojiMap }, "https://www.youtube.com");
       }
       input.value = "";
     }
@@ -458,12 +520,19 @@
     sendBtn.addEventListener("click", sendMessage);
   }
 
-  // --- 메시지 수신 (오버레이 생성 트리거용) ---
+  // --- 메시지 수신 (오버레이 생성 트리거용 + YouTube 이모지 데이터) ---
   window.addEventListener("message", (e) => {
     if (e.origin !== "https://www.youtube.com") return;
     if (!e.data || e.data.source !== "ync-chat-observer") return;
     if (e.data.event === "ready" || e.data.event === "message") {
       if (!overlay) createOverlay();
+    }
+    if (e.data.event === "ytEmojis" && e.data.emojis) {
+      if (overlay) {
+        populateYTEmojis(e.data.emojis);
+      } else {
+        pendingYTEmojis = e.data.emojis;
+      }
     }
   });
 

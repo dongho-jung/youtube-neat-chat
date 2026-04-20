@@ -127,6 +127,9 @@
 
     sendToParent({ event: "ready" });
 
+    // YouTube 이모지 추출 (채팅 프레임이 숨겨져 있으므로 유저에게 안 보임)
+    setTimeout(extractAndSendYTEmojis, 3000);
+
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
@@ -150,10 +153,10 @@
     const text = e.data.text;
     if (!text) return;
 
-    sendChatMessage(text);
+    sendChatMessage(text, e.data.ytEmojiMap);
   });
 
-  function sendChatMessage(text) {
+  function sendChatMessage(text, ytEmojiMap) {
     // contenteditable div#input (yt-live-chat-text-input-field-renderer 내부)
     const chatInput = document.querySelector(
       "div#input[contenteditable].style-scope.yt-live-chat-text-input-field-renderer"
@@ -171,8 +174,21 @@
     selection.addRange(range);
     document.execCommand("delete", false, null);
 
-    // 3. 텍스트 삽입 — execCommand가 가장 Polymer 호환성 좋음
-    document.execCommand("insertText", false, text);
+    // 3. 텍스트 + YouTube 이모지 삽입
+    if (ytEmojiMap && Object.keys(ytEmojiMap).length > 0) {
+      const segments = splitTextByEmojis(text, ytEmojiMap);
+      for (const seg of segments) {
+        if (seg.type === "text" && seg.value) {
+          document.execCommand("insertText", false, seg.value);
+        } else if (seg.type === "emoji") {
+          document.execCommand("insertHTML", false,
+            `<img class="emoji yt-formatted-string style-scope yt-live-chat-text-input-field-renderer" src="${seg.src}" alt="${seg.shortcode}" shared-tooltip-text="${seg.shortcode}">`
+          );
+        }
+      }
+    } else {
+      document.execCommand("insertText", false, text);
+    }
 
     // 4. Polymer가 인식하도록 이벤트 연쇄 발생
     chatInput.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
@@ -180,6 +196,23 @@
 
     // 5. 전송 (딜레이를 두고 버튼 활성화 대기 후 클릭)
     waitAndSend(chatInput, 0);
+  }
+
+  function splitTextByEmojis(text, emojiMap) {
+    const shortcodes = Object.keys(emojiMap);
+    if (shortcodes.length === 0) return [{ type: "text", value: text }];
+
+    const pattern = new RegExp(
+      "(" + shortcodes.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")",
+      "g"
+    );
+
+    return text.split(pattern).filter(Boolean).map(part => {
+      if (emojiMap[part]) {
+        return { type: "emoji", shortcode: part, src: emojiMap[part] };
+      }
+      return { type: "text", value: part };
+    });
   }
 
   function waitAndSend(chatInput, attempt) {
@@ -206,6 +239,76 @@
         }));
       }
     }, 100);
+  }
+
+  // --- YouTube 이모지 추출 ---
+  function extractAndSendYTEmojis() {
+    // 이모지 버튼 찾기
+    const emojiBtn = document.querySelector(
+      "#emoji-button button, #emoji-button yt-icon-button button, #emoji-button yt-button-shape button"
+    );
+    if (!emojiBtn) return;
+
+    // 클릭하여 피커 열기 (숨겨진 프레임이므로 유저에게 안 보임)
+    emojiBtn.click();
+
+    let attempts = 0;
+    const maxAttempts = 20;
+    const checkInterval = setInterval(() => {
+      attempts++;
+      const pickerImgs = document.querySelectorAll("yt-emoji-picker-renderer img");
+
+      if (pickerImgs.length > 0 || attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+
+        if (pickerImgs.length > 0) {
+          const ytEmojis = extractYTCategoryEmojis() || extractFilteredEmojis(pickerImgs);
+          if (ytEmojis.length > 0) {
+            sendToParent({ event: "ytEmojis", emojis: ytEmojis });
+          }
+        }
+
+        // 피커 닫기
+        emojiBtn.click();
+      }
+    }, 200);
+  }
+
+  function extractYTCategoryEmojis() {
+    // 첫 번째 카테고리가 보통 YouTube 전용 이모지
+    const categories = document.querySelectorAll("yt-emoji-picker-category-renderer");
+    if (categories.length === 0) return null;
+
+    const firstCategory = categories[0];
+    const imgs = firstCategory.querySelectorAll("img");
+    // 유니코드 이모지 카테고리가 아닌 YouTube 전용인지 확인 (50개 이하)
+    if (imgs.length === 0 || imgs.length > 60) return null;
+
+    return extractEmojiData(imgs);
+  }
+
+  function extractFilteredEmojis(imgs) {
+    // 폴백: URL 패턴으로 YouTube 전용 이모지 필터링
+    const filtered = Array.from(imgs).filter(img => {
+      const src = img.src || "";
+      return src.includes("/emojis/") || src.includes("yt3.ggpht.com");
+    });
+    return extractEmojiData(filtered.length > 0 ? filtered : Array.from(imgs).slice(0, 50));
+  }
+
+  function extractEmojiData(imgs) {
+    const emojis = [];
+    const seen = new Set();
+
+    for (const img of imgs) {
+      const src = img.src;
+      const alt = img.alt || img.getAttribute("shared-tooltip-text") || "";
+      if (!src || !alt || seen.has(alt)) continue;
+      seen.add(alt);
+      emojis.push({ shortcode: alt, src });
+    }
+
+    return emojis;
   }
 
   observeChat();
