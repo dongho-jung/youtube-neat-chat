@@ -229,14 +229,15 @@
 
   function getChatFrameWindow() {
     const yt = document.querySelector("#chatframe");
-    if (isValidChatFrame(yt) && yt.contentWindow) return yt.contentWindow;
+    if (yt && yt.contentWindow) return yt.contentWindow;
     if (yncChatFrame && yncChatFrame.contentWindow) return yncChatFrame.contentWindow;
     return null;
   }
 
   function ensureChatFrame() {
+    // 원본 #chatframe이 DOM에 있으면 (display:none이어도 동작함) 중복 생성 안 함
     const yt = document.querySelector("#chatframe");
-    if (isValidChatFrame(yt)) return;
+    if (yt) return;
     if (yncChatFrame && yncChatFrame.isConnected) return;
 
     const videoId = new URLSearchParams(location.search).get("v");
@@ -254,44 +255,78 @@
   }
 
   // --- 영상 확장 ---
+  // --- 레이아웃 오버라이드 CSS ---
+  const YNC_STYLE_ID = "ync-layout-style";
+  const YNC_LAYOUT_CSS = `
+    ytd-watch-flexy {
+      --ytd-watch-flexy-sidebar-width: 0px !important;
+    }
+    ytd-watch-flexy ytd-live-chat-frame#chat,
+    ytd-watch-flexy #panels,
+    ytd-watch-flexy #secondary {
+      position: fixed !important;
+      top: -9999px !important;
+      left: -9999px !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      z-index: -1 !important;
+    }
+    ytd-watch-flexy #full-bleed-container,
+    ytd-watch-flexy #player-theater-container,
+    ytd-watch-flexy #player-wide-container,
+    ytd-watch-flexy #player-container {
+      max-width: 100% !important;
+      width: 100% !important;
+    }
+    ytd-watch-flexy #movie_player,
+    ytd-watch-flexy .html5-video-container,
+    ytd-watch-flexy .html5-video-container video {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+    ytd-watch-flexy #columns #primary {
+      max-width: 100% !important;
+      width: 100% !important;
+    }
+  `;
+
+  function injectLayoutStyle() {
+    if (document.getElementById(YNC_STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = YNC_STYLE_ID;
+    style.textContent = YNC_LAYOUT_CSS;
+    document.head.appendChild(style);
+  }
+
+  function removeLayoutStyle() {
+    document.getElementById(YNC_STYLE_ID)?.remove();
+  }
+
   function expandVideoLayout() {
     if (layoutActive) return;
     layoutActive = true;
+    injectLayoutStyle();
     applyLayoutOverrides();
     layoutTimer = setInterval(applyLayoutOverrides, 500);
   }
 
   function applyLayoutOverrides() {
+    injectLayoutStyle();
     const flexy = document.querySelector("ytd-watch-flexy");
     if (flexy) {
       flexy.removeAttribute("live-chat-present-and-expanded");
       flexy.removeAttribute("panel-expanded");
+      flexy.removeAttribute("fixed-panels");
+      flexy.removeAttribute("watch-while-panels-active");
+      flexy.removeAttribute("should-stamp-chat");
     }
-
-    const chat = document.querySelector("ytd-live-chat-frame#chat");
-    if (chat) {
-      chat.style.setProperty("position", "fixed", "important");
-      chat.style.setProperty("top", "0", "important");
-      chat.style.setProperty("right", "0", "important");
-      chat.style.setProperty("width", "400px", "important");
-      chat.style.setProperty("height", "500px", "important");
-      chat.style.setProperty("opacity", "0", "important");
-      chat.style.setProperty("pointer-events", "none", "important");
-      chat.style.setProperty("z-index", "-1", "important");
-    }
-
     ensureChatFrame();
   }
 
   function restoreVideoLayout() {
     if (layoutTimer) { clearInterval(layoutTimer); layoutTimer = null; }
     layoutActive = false;
-
-    const chat = document.querySelector("ytd-live-chat-frame#chat");
-    if (chat) {
-      ["position","top","right","width","height","opacity","pointer-events","z-index"]
-        .forEach(p => chat.style.removeProperty(p));
-    }
+    removeLayoutStyle();
     if (yncChatFrame && yncChatFrame.isConnected) yncChatFrame.remove();
     yncChatFrame = null;
   }
