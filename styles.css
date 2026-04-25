@@ -64,6 +64,111 @@
   color: rgba(255, 255, 255, 0.7) !important;
 }
 
+#ync-overlay .ync-header-spacer {
+  flex: 1 !important;
+}
+
+#ync-overlay .ync-msglog-btn {
+  background: none !important;
+  border: none !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  padding: 2px 4px !important;
+  border-radius: 3px !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  opacity: 0.4 !important;
+  transition: opacity 0.15s !important;
+}
+
+#ync-overlay .ync-msglog-btn:hover {
+  opacity: 0.8 !important;
+}
+
+/* --- 메시지 로그 --- */
+#ync-overlay .ync-msglog {
+  display: none;
+  align-items: center !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  gap: 2px !important;
+}
+
+#ync-overlay .ync-msglog.ync-msglog-open {
+  display: flex !important;
+}
+
+#ync-overlay .ync-msglog-nav {
+  background: none !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+  font-size: 9px !important;
+  cursor: pointer !important;
+  padding: 2px 4px !important;
+  border-radius: 3px !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  flex-shrink: 0 !important;
+  transition: color 0.15s !important;
+}
+
+#ync-overlay .ync-msglog-nav:hover {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+#ync-overlay .ync-msglog-display {
+  flex: 1 !important;
+  min-width: 0 !important;
+  padding: 2px 4px !important;
+  border-radius: 3px !important;
+  cursor: pointer !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  transition: background 0.1s !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#ync-overlay .ync-msglog-display:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+#ync-overlay .ync-msglog-display.ync-msglog-copied {
+  background: rgba(76, 175, 80, 0.25) !important;
+}
+
+#ync-overlay .ync-msglog-empty {
+  color: rgba(255, 255, 255, 0.3) !important;
+  font-size: 10px !important;
+}
+
+#ync-overlay .ync-msglog-author {
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-size: 10px !important;
+  margin-right: 4px !important;
+}
+
+#ync-overlay .ync-msglog-text {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+#ync-overlay .ync-msglog-text .ync-emoji,
+#ync-overlay .ync-msglog-text img {
+  width: 14px !important;
+  height: 14px !important;
+  vertical-align: middle !important;
+}
+
 /* --- 입력 영역 --- */
 #ync-overlay .ync-input-wrap {
   display: flex !important;

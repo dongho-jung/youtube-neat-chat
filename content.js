@@ -348,8 +348,14 @@
     overlay.id = "ync-overlay";
     overlay.innerHTML = `
       <div class="ync-header" id="ync-header">
-        <span class="ync-title">💬</span>
+        <button class="ync-msglog-btn" id="ync-msglog-btn" title="Chat log">💬</button>
+        <span class="ync-header-spacer"></span>
         <button class="ync-close" id="ync-close" title="Close">✕</button>
+      </div>
+      <div class="ync-msglog" id="ync-msglog">
+        <button class="ync-msglog-nav ync-msglog-up" id="ync-msglog-up" title="Previous">▲</button>
+        <div class="ync-msglog-display" id="ync-msglog-display"></div>
+        <button class="ync-msglog-nav ync-msglog-down" id="ync-msglog-down" title="Next">▼</button>
       </div>
       <div class="ync-input-wrap">
         <input type="text" class="ync-input" id="ync-input" placeholder="Chat..." autocomplete="off">
@@ -380,6 +386,67 @@
       overlay = null;
       restoreVideoLayout();
     });
+
+    // 메시지 로그 토글
+    const msglogBtn = overlay.querySelector("#ync-msglog-btn");
+    const msglog = overlay.querySelector("#ync-msglog");
+    msglogBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      msglog.classList.toggle("ync-msglog-open");
+      if (msglog.classList.contains("ync-msglog-open")) renderCurrentMsg();
+    });
+
+    // 페이징 버튼
+    overlay.querySelector("#ync-msglog-up").addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (msgLogIndex > 0) { msgLogIndex--; msgLogFollow = false; renderCurrentMsg(); }
+    });
+    overlay.querySelector("#ync-msglog-down").addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (msgLogIndex < chatMessages.length - 1) {
+        msgLogIndex++;
+        msgLogFollow = (msgLogIndex === chatMessages.length - 1);
+        renderCurrentMsg();
+      }
+    });
+  }
+
+  let chatMessages = [];
+  let msgLogIndex = -1;
+  let msgLogFollow = true; // 최신 메시지 자동 추적
+
+  function appendChatMessage(data) {
+    chatMessages.push(data);
+    if (chatMessages.length > 200) { chatMessages.shift(); msgLogIndex = Math.max(0, msgLogIndex - 1); }
+    if (msgLogFollow) msgLogIndex = chatMessages.length - 1;
+    renderCurrentMsg();
+  }
+
+  function renderCurrentMsg() {
+    if (!overlay) return;
+    const display = overlay.querySelector("#ync-msglog-display");
+    if (!display) return;
+    if (chatMessages.length === 0 || msgLogIndex < 0) {
+      display.innerHTML = `<span class="ync-msglog-empty">No messages</span>`;
+      return;
+    }
+    const data = chatMessages[msgLogIndex];
+    display.innerHTML =
+      `<span class="ync-msglog-author">${escapeHTML(data.author)}</span> ` +
+      `<span class="ync-msglog-text">${data.message}</span>`;
+    display.title = "Click to copy";
+    display.onclick = () => {
+      navigator.clipboard.writeText(data.messageText).then(() => {
+        display.classList.add("ync-msglog-copied");
+        setTimeout(() => display.classList.remove("ync-msglog-copied"), 600);
+      });
+    };
+  }
+
+  function escapeHTML(text) {
+    const d = document.createElement("div");
+    d.textContent = text;
+    return d.innerHTML;
   }
 
   // --- 이모지 피커 ---
@@ -561,6 +628,9 @@
     if (!e.data || e.data.source !== "ync-chat-observer") return;
     if (e.data.event === "ready" || e.data.event === "message") {
       if (!overlay) createOverlay();
+      if (e.data.event === "message" && e.data.data) {
+        appendChatMessage(e.data.data);
+      }
     }
     if (e.data.event === "ytEmojis" && e.data.emojis) {
       if (overlay) {
