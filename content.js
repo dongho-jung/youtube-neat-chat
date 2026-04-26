@@ -11,6 +11,7 @@
   let emojiSearchItems = [];
   let ytEmojiMap = {};
   let pendingYTEmojis = null;
+  let chatPanelVisible = false;
 
   // [emoji, keywords] — 검색용 키워드 (영어, 한국어, 일본어)
   const EMOJIS = [
@@ -258,12 +259,12 @@
   // --- 레이아웃 오버라이드 CSS ---
   const YNC_STYLE_ID = "ync-layout-style";
   const YNC_LAYOUT_CSS = `
-    ytd-watch-flexy {
+    ytd-watch-flexy:not([ync-show-chat]) {
       --ytd-watch-flexy-sidebar-width: 0px !important;
     }
-    ytd-watch-flexy ytd-live-chat-frame#chat,
-    ytd-watch-flexy #panels,
-    ytd-watch-flexy #secondary {
+    ytd-watch-flexy:not([ync-show-chat]) ytd-live-chat-frame#chat,
+    ytd-watch-flexy:not([ync-show-chat]) #panels,
+    ytd-watch-flexy:not([ync-show-chat]) #secondary {
       position: fixed !important;
       top: -9999px !important;
       left: -9999px !important;
@@ -271,20 +272,20 @@
       pointer-events: none !important;
       z-index: -1 !important;
     }
-    ytd-watch-flexy #full-bleed-container,
-    ytd-watch-flexy #player-theater-container,
-    ytd-watch-flexy #player-wide-container,
-    ytd-watch-flexy #player-container {
+    ytd-watch-flexy:not([ync-show-chat]) #full-bleed-container,
+    ytd-watch-flexy:not([ync-show-chat]) #player-theater-container,
+    ytd-watch-flexy:not([ync-show-chat]) #player-wide-container,
+    ytd-watch-flexy:not([ync-show-chat]) #player-container {
       max-width: 100% !important;
       width: 100% !important;
     }
-    ytd-watch-flexy #movie_player,
-    ytd-watch-flexy .html5-video-container,
-    ytd-watch-flexy .html5-video-container video {
+    ytd-watch-flexy:not([ync-show-chat]) #movie_player,
+    ytd-watch-flexy:not([ync-show-chat]) .html5-video-container,
+    ytd-watch-flexy:not([ync-show-chat]) .html5-video-container video {
       width: 100% !important;
       max-width: 100% !important;
     }
-    ytd-watch-flexy #columns #primary {
+    ytd-watch-flexy:not([ync-show-chat]) #columns #primary {
       max-width: 100% !important;
       width: 100% !important;
     }
@@ -314,19 +315,43 @@
     injectLayoutStyle();
     const flexy = document.querySelector("ytd-watch-flexy");
     if (flexy) {
-      flexy.removeAttribute("live-chat-present-and-expanded");
-      flexy.removeAttribute("panel-expanded");
-      flexy.removeAttribute("fixed-panels");
-      flexy.removeAttribute("watch-while-panels-active");
-      flexy.removeAttribute("should-stamp-chat");
+      if (chatPanelVisible) {
+        flexy.setAttribute("ync-show-chat", "");
+      } else {
+        flexy.removeAttribute("ync-show-chat");
+        flexy.removeAttribute("live-chat-present-and-expanded");
+        flexy.removeAttribute("panel-expanded");
+        flexy.removeAttribute("fixed-panels");
+        flexy.removeAttribute("watch-while-panels-active");
+        flexy.removeAttribute("should-stamp-chat");
+      }
     }
     ensureChatFrame();
+  }
+
+  function setChatPanelVisible(visible) {
+    chatPanelVisible = visible;
+    const flexy = document.querySelector("ytd-watch-flexy");
+    if (flexy) {
+      if (visible) flexy.setAttribute("ync-show-chat", "");
+      else flexy.removeAttribute("ync-show-chat");
+    }
+    if (overlay) {
+      const btn = overlay.querySelector("#ync-toggle-chat-btn");
+      if (btn) {
+        btn.classList.toggle("ync-toggle-active", visible);
+        btn.title = visible ? "Hide YouTube chat" : "Show YouTube chat";
+      }
+    }
   }
 
   function restoreVideoLayout() {
     if (layoutTimer) { clearInterval(layoutTimer); layoutTimer = null; }
     layoutActive = false;
+    chatPanelVisible = false;
     removeLayoutStyle();
+    const flexy = document.querySelector("ytd-watch-flexy");
+    if (flexy) flexy.removeAttribute("ync-show-chat");
     if (yncChatFrame && yncChatFrame.isConnected) yncChatFrame.remove();
     yncChatFrame = null;
   }
@@ -349,6 +374,7 @@
     overlay.innerHTML = `
       <div class="ync-header" id="ync-header">
         <button class="ync-msglog-btn" id="ync-msglog-btn" title="Chat log">💬</button>
+        <button class="ync-toggle-chat-btn" id="ync-toggle-chat-btn" title="Show YouTube chat">📺</button>
         <span class="ync-header-spacer"></span>
         <button class="ync-close" id="ync-close" title="Close">✕</button>
       </div>
@@ -385,6 +411,12 @@
       overlay.remove();
       overlay = null;
       restoreVideoLayout();
+    });
+
+    // 원본 채팅 토글
+    overlay.querySelector("#ync-toggle-chat-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      setChatPanelVisible(!chatPanelVisible);
     });
 
     // 메시지 로그 토글
@@ -578,7 +610,7 @@
     let startMouseX, startMouseY, startLeft, startTop;
 
     header.addEventListener("mousedown", (e) => {
-      if (e.target.closest(".ync-close")) return;
+      if (e.target.closest(".ync-close, .ync-msglog-btn, .ync-toggle-chat-btn")) return;
       dragging = true;
       startMouseX = e.clientX;
       startMouseY = e.clientY;
