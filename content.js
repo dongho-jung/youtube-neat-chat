@@ -315,16 +315,8 @@
     injectLayoutStyle();
     const flexy = document.querySelector("ytd-watch-flexy");
     if (flexy) {
-      if (chatPanelVisible) {
-        flexy.setAttribute("ync-show-chat", "");
-      } else {
-        flexy.removeAttribute("ync-show-chat");
-        flexy.removeAttribute("live-chat-present-and-expanded");
-        flexy.removeAttribute("panel-expanded");
-        flexy.removeAttribute("fixed-panels");
-        flexy.removeAttribute("watch-while-panels-active");
-        flexy.removeAttribute("should-stamp-chat");
-      }
+      if (chatPanelVisible) flexy.setAttribute("ync-show-chat", "");
+      else flexy.removeAttribute("ync-show-chat");
     }
     ensureChatFrame();
   }
